@@ -13,16 +13,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gbroche.courseorganizer.model.Role;
-import com.gbroche.courseorganizer.repository.RoleRepository;
+import com.gbroche.courseorganizer.model.Genre;
+import com.gbroche.courseorganizer.repository.GenreRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RoleControllerTest {
-
+public class GenreControllerTest {
     @Autowired
-    private RoleRepository repository;
+    private GenreRepository repository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -37,50 +36,50 @@ public class RoleControllerTest {
 
     @Test
     void testCreate_ShouldCreateAndReturnNewEntity() throws Exception {
-        Role roleToAdd = new Role("ADMIN");
-        mockMvc.perform(post("/api/roles")
+        Genre toAdd = new Genre("Male");
+        mockMvc.perform(post("/api/genres")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(roleToAdd)))
+                .content(objectMapper.writeValueAsString(toAdd)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("ADMIN"));
+                .andExpect(jsonPath("$.label").value("Male"));
     }
 
     @Test
     void testGetById_GivenValidId_ReturnsCorrespondingEntity() throws Exception {
-        Role r = repository.save(new Role("ADMIN"));
-        mockMvc.perform(get("/api/roles/" + r.getId()))
+        Genre toRetrieve = repository.save(new Genre("Male"));
+        mockMvc.perform(get("/api/genres/" + toRetrieve.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("ADMIN"));
+                .andExpect(jsonPath("$.label").value("Male"));
     }
 
     @Test
     void testGetById_GivenInvalidId_ReturnsNotFoundResponse() throws Exception {
-        mockMvc.perform(get("/api/roles/1"))
+        mockMvc.perform(get("/api/genres/1"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("No corresponding entity found"));
     }
 
     @Test
     void testGetAll() throws Exception {
-        repository.save(new Role("ADMIN"));
-        repository.save(new Role("TEACHER"));
-        repository.save(new Role("STUDENT"));
-        mockMvc.perform(get("/api/roles"))
+        repository.save(new Genre("Male"));
+        repository.save(new Genre("Female"));
+        repository.save(new Genre("Non Binary"));
+        mockMvc.perform(get("/api/genres"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].label").value("ADMIN"))
-                .andExpect(jsonPath("$[1].label").value("TEACHER"))
-                .andExpect(jsonPath("$[2].label").value("STUDENT"));
+                .andExpect(jsonPath("$[0].label").value("Male"))
+                .andExpect(jsonPath("$[1].label").value("Female"))
+                .andExpect(jsonPath("$[2].label").value("Non Binary"));
     }
 
     @Test
     void testUpdate_GivenValidInputs_ShouldReturnUpdatedRole() throws Exception {
-        Role roleToEdit = repository.save(new Role("Adm"));
-        roleToEdit.setLabel("ADMIN");
-        mockMvc.perform(put("/api/roles/" + roleToEdit.getId())
+        Genre toEdit = repository.save(new Genre("m"));
+        toEdit.setLabel("Male");
+        mockMvc.perform(put("/api/genres/" + toEdit.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(roleToEdit)))
+                .content(objectMapper.writeValueAsString(toEdit)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("ADMIN"));
+                .andExpect(jsonPath("$.label").value("Male"));
     }
 }
