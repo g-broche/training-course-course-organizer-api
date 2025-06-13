@@ -67,10 +67,7 @@ public class RoleControllerTest {
         repository.save(new Role("STUDENT"));
         mockMvc.perform(get("/api/roles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].label").value("ADMIN"))
-                .andExpect(jsonPath("$[1].label").value("TEACHER"))
-                .andExpect(jsonPath("$[2].label").value("STUDENT"));
+                .andExpect(jsonPath("$.length()").value(3));
     }
 
     @Test

@@ -13,15 +13,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gbroche.courseorganizer.model.Genre;
-import com.gbroche.courseorganizer.repository.GenreRepository;
+import com.gbroche.courseorganizer.model.Role;
+import com.gbroche.courseorganizer.model.Status;
+import com.gbroche.courseorganizer.repository.StatusRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-public class GenreControllerTest {
+public class StatusControllerTest {
+
     @Autowired
-    private GenreRepository repository;
+    private StatusRepository repository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,47 +38,47 @@ public class GenreControllerTest {
 
     @Test
     void testCreate_ShouldCreateAndReturnNewEntity() throws Exception {
-        Genre toAdd = new Genre("Male");
-        mockMvc.perform(post("/api/genres")
+        Status ToAdd = new Status("Ongoing");
+        mockMvc.perform(post("/api/status")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(toAdd)))
+                .content(objectMapper.writeValueAsString(ToAdd)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("Male"));
+                .andExpect(jsonPath("$.label").value("Ongoing"));
     }
 
     @Test
     void testGetById_GivenValidId_ReturnsCorrespondingEntity() throws Exception {
-        Genre toRetrieve = repository.save(new Genre("Male"));
-        mockMvc.perform(get("/api/genres/" + toRetrieve.getId()))
+        Status s = repository.save(new Status("Ongoing"));
+        mockMvc.perform(get("/api/status/" + s.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("Male"));
+                .andExpect(jsonPath("$.label").value("Ongoing"));
     }
 
     @Test
     void testGetById_GivenInvalidId_ReturnsNotFoundResponse() throws Exception {
-        mockMvc.perform(get("/api/genres/1"))
+        mockMvc.perform(get("/api/status/1"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("No corresponding entity found"));
     }
 
     @Test
     void testGetAll() throws Exception {
-        repository.save(new Genre("Male"));
-        repository.save(new Genre("Female"));
-        repository.save(new Genre("Non Binary"));
-        mockMvc.perform(get("/api/genres"))
+        repository.save(new Status("Ongoing"));
+        repository.save(new Status("Planned"));
+        repository.save(new Status("Abandonned"));
+        mockMvc.perform(get("/api/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3));
     }
 
     @Test
     void testUpdate_GivenValidInputs_ShouldReturnUpdatedRole() throws Exception {
-        Genre toEdit = repository.save(new Genre("m"));
-        toEdit.setLabel("Male");
-        mockMvc.perform(put("/api/genres/" + toEdit.getId())
+        Status toEdit = repository.save(new Status("og"));
+        toEdit.setLabel("Ongoing");
+        mockMvc.perform(put("/api/status/" + toEdit.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(toEdit)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("Male"));
+                .andExpect(jsonPath("$.label").value("Ongoing"));
     }
 }
