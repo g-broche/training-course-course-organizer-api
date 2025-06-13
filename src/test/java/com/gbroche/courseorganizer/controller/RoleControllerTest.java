@@ -9,12 +9,16 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Role;
 import com.gbroche.courseorganizer.repository.RoleRepository;
+
+import jakarta.persistence.EntityManager;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -30,6 +34,9 @@ public class RoleControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @BeforeEach
     void setUp() {
         repository.deleteAll();
@@ -42,7 +49,8 @@ public class RoleControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(roleToAdd)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("ADMIN"));
+                .andExpect(jsonPath("$.label").value("ADMIN"))
+                .andExpect(jsonPath("$.recordStatus").value("SHOWN"));
     }
 
     @Test
@@ -79,5 +87,16 @@ public class RoleControllerTest {
                 .content(objectMapper.writeValueAsString(roleToEdit)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("ADMIN"));
+    }
+
+    @Test
+    void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
+        Role toDelete = repository.save(new Role("delete test"));
+        mockMvc.perform(delete("/api/roles/" + toDelete.getId()))
+                .andExpect(status().isNoContent());
+
+        entityManager.clear();
+        Role softDeleted = repository.findById(toDelete.getId()).orElseThrow();
+        assertEquals(RecordStatus.TO_DELETE, softDeleted.getRecordStatus());
     }
 }

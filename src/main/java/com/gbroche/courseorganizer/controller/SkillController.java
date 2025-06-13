@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Skill;
 import com.gbroche.courseorganizer.repository.SkillRepository;
 
@@ -53,7 +55,7 @@ public class SkillController {
     @PostMapping
     public Skill create(@RequestBody Skill skill) {
         skill.setCreatedAt(LocalDateTime.now());
-        return repository.save(skill);
+        return repository.saveAndFlush(skill);
     }
 
     @PutMapping("/{id}")
@@ -63,12 +65,24 @@ public class SkillController {
             found.setLabel(skill.getLabel());
             found.setIsHardSkill(skill.isHardSkill());
             found.setUpdatedAt(LocalDateTime.now());
-            Skill editedSkill = repository.save(found);
+            Skill editedSkill = repository.saveAndFlush(found);
             return ResponseEntity.ok(editedSkill);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("No corresponding entity found");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Failed to update entity");
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> softDeleteById(@PathVariable Long id) {
+        try {
+            Skill toSoftDelete = repository.findById(id).orElseThrow();
+            toSoftDelete.setRecordStatus(RecordStatus.TO_DELETE);
+            repository.saveAndFlush(toSoftDelete);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body("No corresponding entity found");
         }
     }
 }
