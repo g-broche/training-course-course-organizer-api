@@ -9,12 +9,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Skill;
 import com.gbroche.courseorganizer.repository.SkillRepository;
 
@@ -45,7 +47,8 @@ public class SkillControllerTest {
                 .content(objectMapper.writeValueAsString(toAdd)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("Curious"))
-                .andExpect(jsonPath("$.hardSkill").value(false));
+                .andExpect(jsonPath("$.hardSkill").value(false))
+                .andExpect(jsonPath("$.recordStatus").value("SHOWN"));
     }
 
     @Test
@@ -103,5 +106,14 @@ public class SkillControllerTest {
                 .content(objectMapper.writeValueAsString(toEdit)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("Curious"));
+    }
+
+    @Test
+    void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
+        Skill toDelete = repository.save(new Skill("delete test", false, LocalDateTime.now()));
+        mockMvc.perform(delete("/api/skills/" + toDelete.getId()))
+                .andExpect(status().isNoContent());
+        Skill softDeleted = repository.findById(toDelete.getId()).orElseThrow();
+        assertEquals(RecordStatus.TO_DELETE, softDeleted.getRecordStatus());
     }
 }

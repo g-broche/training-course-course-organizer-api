@@ -9,10 +9,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.repository.GenreRepository;
 
@@ -41,7 +43,8 @@ public class GenreControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(toAdd)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("Male"));
+                .andExpect(jsonPath("$.label").value("Male"))
+                .andExpect(jsonPath("$.recordStatus").value("SHOWN"));
     }
 
     @Test
@@ -78,5 +81,14 @@ public class GenreControllerTest {
                 .content(objectMapper.writeValueAsString(toEdit)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("Male"));
+    }
+
+    @Test
+    void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
+        Genre toDelete = repository.save(new Genre("delete test"));
+        mockMvc.perform(delete("/api/genres/" + toDelete.getId()))
+                .andExpect(status().isNoContent());
+        Genre softDeletedGenre = repository.findById(toDelete.getId()).orElseThrow();
+        assertEquals(RecordStatus.TO_DELETE, softDeletedGenre.getRecordStatus());
     }
 }

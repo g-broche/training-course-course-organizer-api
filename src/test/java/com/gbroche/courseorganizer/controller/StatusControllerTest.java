@@ -9,11 +9,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gbroche.courseorganizer.model.Role;
+import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Status;
 import com.gbroche.courseorganizer.repository.StatusRepository;
 
@@ -43,7 +44,8 @@ public class StatusControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(ToAdd)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("Ongoing"));
+                .andExpect(jsonPath("$.label").value("Ongoing"))
+                .andExpect(jsonPath("$.recordStatus").value("SHOWN"));
     }
 
     @Test
@@ -80,5 +82,14 @@ public class StatusControllerTest {
                 .content(objectMapper.writeValueAsString(toEdit)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("Ongoing"));
+    }
+
+    @Test
+    void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
+        Status toDelete = repository.save(new Status("delete test"));
+        mockMvc.perform(delete("/api/status/" + toDelete.getId()))
+                .andExpect(status().isNoContent());
+        Status softDeleted = repository.findById(toDelete.getId()).orElseThrow();
+        assertEquals(RecordStatus.TO_DELETE, softDeleted.getRecordStatus());
     }
 }
