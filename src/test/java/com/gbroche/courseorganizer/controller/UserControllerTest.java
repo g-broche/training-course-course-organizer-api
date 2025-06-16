@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gbroche.courseorganizer.dto.user.CreateUserRequestDTO;
+import com.gbroche.courseorganizer.dto.SignUpRequest;
 import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
@@ -72,38 +72,23 @@ public class UserControllerTest {
         genreRepository.deleteAll();
     }
 
-    @Test
-    void testCreate_Should_CreateNewUser() throws Exception {
-        CreateUserRequestDTO toAdd = new CreateUserRequestDTO(
-                "John",
-                "Doe",
-                "John.doe@test.Test",
-                "testuser",
-                (long) 2);
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(toAdd)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("User John Doe was created."));
-    }
+    // @Test
+    // void testChangeUserRoles() {
+    // assertTrue(false);
+    // }
+
+    // @Test
+    // void testGetAll() {
+    // assertTrue(false);
+    // }
+
+    // @Test
+    // void testGetById() {
+    // assertTrue(false);
+    // }
+
+    // @Test
+    // void testSoftDeleteById() {
+    // assertTrue(false);
+    // }
 }
-
-// @Test
-// void testChangeUserRoles() {
-// assertTrue(false);
-// }
-
-// @Test
-// void testGetAll() {
-// assertTrue(false);
-// }
-
-// @Test
-// void testGetById() {
-// assertTrue(false);
-// }
-
-// @Test
-// void testSoftDeleteById() {
-// assertTrue(false);
-// }

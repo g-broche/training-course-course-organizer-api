@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.gbroche.courseorganizer.dto.user.CreateUserRequestDTO;
+import com.gbroche.courseorganizer.dto.SignUpRequest;
 import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
@@ -55,30 +55,6 @@ public class UserController {
             return ResponseEntity.status(404).body("No corresponding user found");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @PostMapping
-    public ResponseEntity<?> create(@RequestBody CreateUserRequestDTO userToAddDTO) {
-        try {
-            String hashedPassword = passwordEncoder.encode(userToAddDTO.getRawPassword());
-            Genre genre = genreRepository.findById(userToAddDTO.getGenreId()).orElseThrow();
-            Role userRole = roleRepository.findByLabel("USER");
-            Set<Role> defaultRoles = new HashSet<>();
-            defaultRoles.add(userRole);
-            User newUser = new User();
-            newUser.setFirstName(userToAddDTO.getFirstName());
-            newUser.setLastName(userToAddDTO.getLastName());
-            newUser.setEmail(userToAddDTO.getEmail());
-            newUser.setPassword(hashedPassword);
-            newUser.setRoles(defaultRoles);
-            newUser.setGenre(genre);
-            User createdUser = repository.saveAndFlush(newUser);
-            String responseMessage = "User " + createdUser.getFirstName() + " " + createdUser.getLastName()
-                    + " was created.";
-            return ResponseEntity.ok().body(responseMessage);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Could not update user roles");
         }
     }
 
