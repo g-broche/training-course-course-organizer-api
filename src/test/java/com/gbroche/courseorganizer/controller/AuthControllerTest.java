@@ -1,18 +1,13 @@
 package com.gbroche.courseorganizer.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gbroche.courseorganizer.config.JwtProperties;
@@ -98,16 +96,16 @@ public class AuthControllerTest {
         SignUpRequest toAdd = new SignUpRequest(
                 "John",
                 "Doe",
-                "John.doe@test.Test",
+                "john.doe@test.test",
                 "testuser",
                 (long) 2);
 
-        String jsonPayload = objectMapper.writeValueAsString(toAdd);
-        System.out.println("Request JSON: " + jsonPayload);
         MvcResult result = mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(toAdd)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.firstName").value("John"))
+                .andExpect(jsonPath("$.user.password").doesNotExist())
                 .andExpect(jsonPath("$.token").exists())
                 .andReturn();
 
@@ -131,7 +129,7 @@ public class AuthControllerTest {
         Claims claims = jwsClaims.getBody();
 
         // Assert claims
-        assertEquals("John.doe@test.Test", claims.getSubject(), "Subject (email) should match");
+        assertEquals("john.doe@test.test", claims.getSubject(), "Subject (email) should match");
         assertNotNull(claims.getIssuedAt(), "IssuedAt should be set");
         assertNotNull(claims.getExpiration(), "Expiration should be set");
         assertTrue(claims.getExpiration().after(new Date()), "Token should not be expired");
@@ -139,7 +137,7 @@ public class AuthControllerTest {
 
     @Test
     void testLogin_GivenValidInfo_ReturnsOkWithToken() throws Exception {
-        User existing = new User("John", "Doe", "John.doe@test.Test");
+        User existing = new User("John", "Doe", "john.doe@test.test");
         String clearPassword = "testuser";
         String hashedPassword = passwordEncoder.encode(clearPassword);
         existing.setPassword(hashedPassword);
@@ -150,11 +148,13 @@ public class AuthControllerTest {
         existing.setGenre(genre);
         repository.save(existing);
 
-        AuthRequest credentials = new AuthRequest("John.doe@test.Test", clearPassword);
+        AuthRequest credentials = new AuthRequest("john.doe@test.test", clearPassword);
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(credentials)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.firstName").value("John"))
+                .andExpect(jsonPath("$.user.password").doesNotExist())
                 .andExpect(jsonPath("$.token").exists())
                 .andReturn();
 
@@ -178,7 +178,7 @@ public class AuthControllerTest {
         Claims claims = jwsClaims.getBody();
 
         // Assert claims
-        assertEquals("John.doe@test.Test", claims.getSubject(), "Subject (email) should match");
+        assertEquals("john.doe@test.test", claims.getSubject(), "Subject (email) should match");
         assertNotNull(claims.getIssuedAt(), "IssuedAt should be set");
         assertNotNull(claims.getExpiration(), "Expiration should be set");
         assertTrue(claims.getExpiration().after(new Date()), "Token should not be expired");

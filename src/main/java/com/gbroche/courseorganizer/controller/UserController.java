@@ -4,21 +4,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.gbroche.courseorganizer.dto.SignUpRequest;
+import com.gbroche.courseorganizer.dto.UserDTO;
 import com.gbroche.courseorganizer.enums.RecordStatus;
-import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
 import com.gbroche.courseorganizer.model.User;
 import com.gbroche.courseorganizer.repository.GenreRepository;
@@ -31,30 +30,30 @@ public class UserController {
     private final UserRepository repository;
     private final RoleRepository roleRepository;
     private final GenreRepository genreRepository;
-    private final PasswordEncoder passwordEncoder;
 
     public UserController(UserRepository repository, PasswordEncoder passwordEncoder, RoleRepository roleRepository,
             GenreRepository genreRepository) {
         this.repository = repository;
-        this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.genreRepository = genreRepository;
     }
 
     @GetMapping
-    public List<User> getAll() {
-        return repository.findAll();
+    public List<UserDTO> getAll() {
+        return repository.findAll().stream()
+                .map(UserDTO::new)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
             User found = repository.findById(id).orElseThrow();
-            return ResponseEntity.ok(found);
+            return ResponseEntity.ok(new UserDTO(found));
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("No corresponding user found");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body("Could not retrieve user due to internal error");
         }
     }
 
@@ -72,8 +71,8 @@ public class UserController {
                 return ResponseEntity.badRequest().body("One or more roles were not found");
             }
             user.setRoles(roles);
-            User savedUser = repository.saveAndFlush(user);
-            return ResponseEntity.ok(savedUser);
+            User editedUser = repository.saveAndFlush(user);
+            return ResponseEntity.ok(new UserDTO(editedUser));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Could not update user roles");
         }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -43,6 +44,7 @@ public class RoleControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testCreate_ShouldCreateAndReturnNewEntity() throws Exception {
         Role roleToAdd = new Role("ADMIN");
         mockMvc.perform(post("/api/roles")
@@ -54,6 +56,7 @@ public class RoleControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenValidId_ReturnsCorrespondingEntity() throws Exception {
         Role r = repository.save(new Role("ADMIN"));
         mockMvc.perform(get("/api/roles/" + r.getId()))
@@ -62,6 +65,7 @@ public class RoleControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenInvalidId_ReturnsNotFoundResponse() throws Exception {
         mockMvc.perform(get("/api/roles/1"))
                 .andExpect(status().isNotFound())
@@ -69,6 +73,7 @@ public class RoleControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAll() throws Exception {
         repository.save(new Role("ADMIN"));
         repository.save(new Role("TEACHER"));
@@ -79,6 +84,7 @@ public class RoleControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testUpdate_GivenValidInputs_ShouldReturnUpdatedRole() throws Exception {
         Role roleToEdit = repository.save(new Role("Adm"));
         roleToEdit.setLabel("ADMIN");
@@ -90,6 +96,7 @@ public class RoleControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
         Role toDelete = repository.save(new Role("delete test"));
         mockMvc.perform(delete("/api/roles/" + toDelete.getId()))

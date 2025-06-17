@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,6 +38,7 @@ public class GenreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testCreate_ShouldCreateAndReturnNewEntity() throws Exception {
         Genre toAdd = new Genre("Male");
         mockMvc.perform(post("/api/genres")
@@ -48,6 +50,7 @@ public class GenreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenValidId_ReturnsCorrespondingEntity() throws Exception {
         Genre toRetrieve = repository.save(new Genre("Male"));
         mockMvc.perform(get("/api/genres/" + toRetrieve.getId()))
@@ -56,6 +59,7 @@ public class GenreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenInvalidId_ReturnsNotFoundResponse() throws Exception {
         mockMvc.perform(get("/api/genres/1"))
                 .andExpect(status().isNotFound())
@@ -63,6 +67,7 @@ public class GenreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAll() throws Exception {
         repository.save(new Genre("Male"));
         repository.save(new Genre("Female"));
@@ -73,6 +78,7 @@ public class GenreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testUpdate_GivenValidInputs_ShouldReturnUpdatedRole() throws Exception {
         Genre toEdit = repository.save(new Genre("m"));
         toEdit.setLabel("Male");
@@ -84,6 +90,7 @@ public class GenreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
         Genre toDelete = repository.save(new Genre("delete test"));
         mockMvc.perform(delete("/api/genres/" + toDelete.getId()))

@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.springframework.security.test.context.support.WithMockUser;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -38,6 +39,7 @@ public class StatusControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testCreate_ShouldCreateAndReturnNewEntity() throws Exception {
         Status ToAdd = new Status("Ongoing");
         mockMvc.perform(post("/api/status")
@@ -49,6 +51,7 @@ public class StatusControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenValidId_ReturnsCorrespondingEntity() throws Exception {
         Status s = repository.save(new Status("Ongoing"));
         mockMvc.perform(get("/api/status/" + s.getId()))
@@ -57,6 +60,7 @@ public class StatusControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenInvalidId_ReturnsNotFoundResponse() throws Exception {
         mockMvc.perform(get("/api/status/1"))
                 .andExpect(status().isNotFound())
@@ -64,6 +68,7 @@ public class StatusControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAll() throws Exception {
         repository.save(new Status("Ongoing"));
         repository.save(new Status("Planned"));
@@ -74,6 +79,7 @@ public class StatusControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testUpdate_GivenValidInputs_ShouldReturnUpdatedRole() throws Exception {
         Status toEdit = repository.save(new Status("og"));
         toEdit.setLabel("Ongoing");
@@ -85,6 +91,7 @@ public class StatusControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
         Status toDelete = repository.save(new Status("delete test"));
         mockMvc.perform(delete("/api/status/" + toDelete.getId()))

@@ -1,5 +1,8 @@
 package com.gbroche.courseorganizer.controller;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,24 +12,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gbroche.courseorganizer.dto.SignUpRequest;
 import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
 import com.gbroche.courseorganizer.model.User;
 import com.gbroche.courseorganizer.repository.GenreRepository;
 import com.gbroche.courseorganizer.repository.RoleRepository;
-import com.gbroche.courseorganizer.repository.StatusRepository;
 import com.gbroche.courseorganizer.repository.UserRepository;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
@@ -72,23 +76,82 @@ public class UserControllerTest {
         genreRepository.deleteAll();
     }
 
-    // @Test
-    // void testChangeUserRoles() {
-    // assertTrue(false);
-    // }
+    @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
+    void testGetAll_ShouldReturnAllUsers() throws Exception {
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByLabel("USER"));
+        Genre genre = genreRepository.findById(2L).orElseThrow();
+        User testUser1 = createTestUser("John", "Doe", genre, roles);
+        User testUser2 = createTestUser("Mathews", "Doe", genre, roles);
+        repository.save(testUser1);
+        repository.save(testUser2);
 
-    // @Test
-    // void testGetAll() {
-    // assertTrue(false);
-    // }
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.[0].password").doesNotExist());
+    }
 
-    // @Test
-    // void testGetById() {
-    // assertTrue(false);
-    // }
+    @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
+    void testGetById_GivenValidIdShouldReturnUser() throws Exception {
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByLabel("USER"));
+        Genre genre = genreRepository.findById(2L).orElseThrow();
+        User testUser = createTestUser("John", "Doe", genre, roles);
+        User existingUser = repository.save(testUser);
 
-    // @Test
-    // void testSoftDeleteById() {
-    // assertTrue(false);
-    // }
+        mockMvc.perform(get("/api/users/" + existingUser.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
+    void testChangeUserRoles_GivenValidSetOfRole_ReturnsUpdatedUser() throws Exception {
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByLabel("USER"));
+        Genre genre = genreRepository.findById(2L).orElseThrow();
+        User testUser = createTestUser("John", "Doe", genre, roles);
+        User existingUser = repository.save(testUser);
+
+        Set<Long> newRoles = new HashSet<>();
+        newRoles.add(roleRepository.findByLabel("ADMIN").getId());
+        newRoles.add(roleRepository.findByLabel("TEACHER").getId());
+
+        mockMvc.perform(put("/api/users/" + existingUser.getId() + "/roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(newRoles)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.roles", hasSize(2)))
+                .andExpect(jsonPath("$.roles", containsInAnyOrder("ADMIN", "TEACHER")));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
+    void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByLabel("USER"));
+        Genre genre = genreRepository.findById(2L).orElseThrow();
+        User testUser = createTestUser("John", "Doe", genre, roles);
+        User toDelete = repository.save(testUser);
+
+        mockMvc.perform(delete("/api/users/" + toDelete.getId()))
+                .andExpect(status().isNoContent());
+        User softDeleted = repository.findById(toDelete.getId()).orElseThrow();
+        assertEquals(RecordStatus.TO_DELETE, softDeleted.getRecordStatus());
+    }
+
+    private User createTestUser(String firstName, String lastName, Genre genre, Set<Role> roles) {
+        String email = firstName + "." + lastName + "@test.test";
+        User testUser = new User(firstName, lastName, email);
+        testUser.setPassword("testpassword");
+        testUser.setRoles(roles);
+        testUser.setGenre(genre);
+        return testUser;
+    }
 }

@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,7 +26,6 @@ import com.gbroche.courseorganizer.repository.RoleRepository;
 import com.gbroche.courseorganizer.repository.UserRepository;
 import com.gbroche.courseorganizer.service.CustomUserDetailsService;
 import com.gbroche.courseorganizer.utils.JwtUtil;
-import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -75,19 +75,16 @@ public class AuthController {
             Role userRole = roleRepository.findByLabel("USER");
             newUser.setRoles(Set.of(userRole));
 
-            userRepository.saveAndFlush(newUser);
+            User user = userRepository.saveAndFlush(newUser);
 
-            // Optional: automatically authenticate the user and return JWT
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(),
                             request.getRawPassword()));
 
             UserDetails userDetails = (UserDetails) auth.getPrincipal();
             String token = jwtUtil.generateToken(userDetails);
-            return ResponseEntity.ok(new AuthResponse(token));
-
+            return ResponseEntity.ok(new AuthResponse(user, token));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body("Registration failed");
         }
     }
@@ -100,9 +97,12 @@ public class AuthController {
 
             UserDetails userDetails = (UserDetails) auth.getPrincipal();
             String token = jwtUtil.generateToken(userDetails);
-            return ResponseEntity.ok(new AuthResponse(token));
+            User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+            return ResponseEntity.ok(new AuthResponse(user, token));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Login failed");
         }
     }
 }
