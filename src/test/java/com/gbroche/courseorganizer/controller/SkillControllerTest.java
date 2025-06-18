@@ -3,10 +3,14 @@ package com.gbroche.courseorganizer.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,6 +25,11 @@ import com.gbroche.courseorganizer.model.Skill;
 import com.gbroche.courseorganizer.repository.SkillRepository;
 
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:usertest-${random.uuid};DB_CLOSE_DELAY=-1"
+})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @AutoConfigureMockMvc
 public class SkillControllerTest {
@@ -40,6 +49,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testCreate_ShouldCreateAndReturnNewEntity() throws Exception {
         Skill toAdd = new Skill("Curious", false);
         mockMvc.perform(post("/api/skills")
@@ -52,6 +62,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenValidId_ReturnsCorrespondingEntity() throws Exception {
         Skill toRetrieve = repository.save(new Skill("Curious", false, LocalDateTime.now()));
         mockMvc.perform(get("/api/skills/" + toRetrieve.getId()))
@@ -60,6 +71,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenInvalidId_ReturnsNotFoundResponse() throws Exception {
         mockMvc.perform(get("/api/skills/1"))
                 .andExpect(status().isNotFound())
@@ -67,6 +79,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAll() throws Exception {
         repository.save(new Skill("Curious", false, LocalDateTime.now()));
         repository.save(new Skill("MVC", true, LocalDateTime.now()));
@@ -77,6 +90,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAllHardSkills_ShouldOnlyReturnHardSkills() throws Exception {
         repository.save(new Skill("Curious", false, LocalDateTime.now()));
         repository.save(new Skill("MVC", true, LocalDateTime.now()));
@@ -87,6 +101,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAllHardSkills_ShouldOnlyReturnSoftSkills() throws Exception {
         repository.save(new Skill("Curious", false, LocalDateTime.now()));
         repository.save(new Skill("MVC", true, LocalDateTime.now()));
@@ -98,6 +113,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testUpdate_GivenValidInputs_ShouldReturnUpdatedRole() throws Exception {
         Skill toEdit = repository.save(new Skill("Curi", false, LocalDateTime.now()));
         toEdit.setLabel("Curious");
@@ -109,6 +125,7 @@ public class SkillControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
         Skill toDelete = repository.save(new Skill("delete test", false, LocalDateTime.now()));
         mockMvc.perform(delete("/api/skills/" + toDelete.getId()))
