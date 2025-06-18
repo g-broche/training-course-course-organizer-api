@@ -4,20 +4,21 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,8 +33,6 @@ import com.gbroche.courseorganizer.dto.SignUpRequest;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
 import com.gbroche.courseorganizer.model.User;
-import com.gbroche.courseorganizer.repository.GenreRepository;
-import com.gbroche.courseorganizer.repository.RoleRepository;
 import com.gbroche.courseorganizer.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
@@ -43,18 +42,17 @@ import io.jsonwebtoken.security.Keys;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:usertest-${random.uuid};DB_CLOSE_DELAY=-1"
+})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class AuthControllerTest {
+public class AuthControllerTest extends PersonBasedTester {
 
     @Autowired
     private UserRepository repository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private GenreRepository genreRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -68,37 +66,20 @@ public class AuthControllerTest {
     @Autowired
     private JwtProperties jwtProperties;
 
-    @BeforeAll
-    void setUpRelations() {
-        roleRepository.save(new Role("ADMIN"));
-        roleRepository.save(new Role("TEACHER"));
-        roleRepository.save(new Role("USER"));
-
-        genreRepository.save(new Genre("Female"));
-        genreRepository.save(new Genre("Male"));
-        genreRepository.save(new Genre("Non binary"));
-    }
-
     @BeforeEach
     void setUp() {
         repository.deleteAll();
     }
 
-    @AfterAll
-    void clearRelations() {
-        repository.deleteAll();
-        roleRepository.deleteAll();
-        genreRepository.deleteAll();
-    }
-
     @Test
     void testRegisterUser_GivenValidInput_ShouldCreateUserAndReturnValidToken() throws Exception {
+        Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         SignUpRequest toAdd = new SignUpRequest(
                 "John",
                 "Doe",
                 "john.doe@test.test",
                 "testuser",
-                (long) 2);
+                genre.getId());
 
         MvcResult result = mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -144,7 +125,7 @@ public class AuthControllerTest {
         Set<Role> roles = new HashSet<>();
         roles.add(roleRepository.findByLabel("USER"));
         existing.setRoles(roles);
-        Genre genre = genreRepository.findById(2L).orElseThrow();
+        Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         existing.setGenre(genre);
         repository.save(existing);
 

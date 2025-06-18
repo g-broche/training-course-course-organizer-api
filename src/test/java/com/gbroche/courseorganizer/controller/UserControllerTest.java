@@ -3,17 +3,18 @@ package com.gbroche.courseorganizer.controller;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -26,26 +27,23 @@ import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
 import com.gbroche.courseorganizer.model.User;
-import com.gbroche.courseorganizer.repository.GenreRepository;
-import com.gbroche.courseorganizer.repository.RoleRepository;
 import com.gbroche.courseorganizer.repository.UserRepository;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:usertest-${random.uuid};DB_CLOSE_DELAY=-1"
+})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class UserControllerTest {
+public class UserControllerTest extends PersonBasedTester {
 
     @Autowired
     private UserRepository repository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private GenreRepository genreRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -53,27 +51,9 @@ public class UserControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeAll
-    void setUpRelations() {
-        roleRepository.save(new Role("ADMIN"));
-        roleRepository.save(new Role("TEACHER"));
-        roleRepository.save(new Role("USER"));
-
-        genreRepository.save(new Genre("Female"));
-        genreRepository.save(new Genre("Male"));
-        genreRepository.save(new Genre("Non binary"));
-    }
-
     @BeforeEach
     void setUp() {
         repository.deleteAll();
-    }
-
-    @AfterAll
-    void clearRelations() {
-        repository.deleteAll();
-        roleRepository.deleteAll();
-        genreRepository.deleteAll();
     }
 
     @Test
@@ -81,7 +61,7 @@ public class UserControllerTest {
     void testGetAll_ShouldReturnAllUsers() throws Exception {
         Set<Role> roles = new HashSet<>();
         roles.add(roleRepository.findByLabel("USER"));
-        Genre genre = genreRepository.findById(2L).orElseThrow();
+        Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser1 = createTestUser("John", "Doe", genre, roles);
         User testUser2 = createTestUser("Mathews", "Doe", genre, roles);
         repository.save(testUser1);
@@ -98,7 +78,7 @@ public class UserControllerTest {
     void testGetById_GivenValidIdShouldReturnUser() throws Exception {
         Set<Role> roles = new HashSet<>();
         roles.add(roleRepository.findByLabel("USER"));
-        Genre genre = genreRepository.findById(2L).orElseThrow();
+        Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser = createTestUser("John", "Doe", genre, roles);
         User existingUser = repository.save(testUser);
 
@@ -113,7 +93,7 @@ public class UserControllerTest {
     void testChangeUserRoles_GivenValidSetOfRole_ReturnsUpdatedUser() throws Exception {
         Set<Role> roles = new HashSet<>();
         roles.add(roleRepository.findByLabel("USER"));
-        Genre genre = genreRepository.findById(2L).orElseThrow();
+        Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser = createTestUser("John", "Doe", genre, roles);
         User existingUser = repository.save(testUser);
 
@@ -136,7 +116,7 @@ public class UserControllerTest {
     void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
         Set<Role> roles = new HashSet<>();
         roles.add(roleRepository.findByLabel("USER"));
-        Genre genre = genreRepository.findById(2L).orElseThrow();
+        Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser = createTestUser("John", "Doe", genre, roles);
         User toDelete = repository.save(testUser);
 
@@ -147,7 +127,7 @@ public class UserControllerTest {
     }
 
     private User createTestUser(String firstName, String lastName, Genre genre, Set<Role> roles) {
-        String email = firstName + "." + lastName + "@test.test";
+        String email = firstName.toLowerCase() + "." + lastName.toLowerCase() + "@test.test";
         User testUser = new User(firstName, lastName, email);
         testUser.setPassword("testpassword");
         testUser.setRoles(roles);

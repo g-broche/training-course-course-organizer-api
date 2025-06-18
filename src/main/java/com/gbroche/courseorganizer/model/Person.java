@@ -32,18 +32,6 @@ public abstract class Person extends RecordStatusEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "is_verified", nullable = false)
-    private boolean isVerified = false;
-
-    @Column(name = "has_accepted_terms", nullable = false)
-    private boolean hasAcceptedTerms = false;
-
-    @Column(name = "has_accepted_cookies", nullable = false)
-    private boolean hasAcceptedCookies = false;
-
-    @Column(name = "answered_terms_at")
-    private LocalDateTime answeredTermsAt;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -98,38 +86,6 @@ public abstract class Person extends RecordStatusEntity {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public boolean isVerified() {
-        return isVerified;
-    }
-
-    public void setIsVerified(boolean isVerified) {
-        this.isVerified = isVerified;
-    }
-
-    public boolean hasAcceptedTerms() {
-        return hasAcceptedTerms;
-    }
-
-    public void setHasAcceptedTerms(boolean hasAcceptedTerms) {
-        this.hasAcceptedTerms = hasAcceptedTerms;
-    }
-
-    public boolean hasAcceptedCookies() {
-        return hasAcceptedCookies;
-    }
-
-    public void setHasAcceptedCookies(boolean hasAcceptedCookies) {
-        this.hasAcceptedCookies = hasAcceptedCookies;
-    }
-
-    public LocalDateTime getAnsweredTermsAt() {
-        return answeredTermsAt;
-    }
-
-    public void setAnsweredTermsAt(LocalDateTime answeredTermsAt) {
-        this.answeredTermsAt = answeredTermsAt;
     }
 
     public LocalDateTime getCreatedAt() {

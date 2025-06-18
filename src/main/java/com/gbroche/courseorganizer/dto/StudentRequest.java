@@ -1,20 +1,22 @@
 package com.gbroche.courseorganizer.dto;
 
-public class SignUpRequest {
+import java.time.LocalDate;
+
+public class StudentRequest {
     private String firstName;
     private String lastName;
     private String email;
-    private String rawPassword;
+    private LocalDate birthDate;
     private Long genreId;
 
-    public SignUpRequest() {
+    public StudentRequest() {
     }
 
-    public SignUpRequest(String firstName, String lastName, String email, String rawPassword, Long genreId) {
+    public StudentRequest(String firstName, String lastName, String email, LocalDate birthDate, Long genreId) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.rawPassword = rawPassword;
+        this.birthDate = birthDate;
         this.genreId = genreId;
     }
 
@@ -42,12 +44,12 @@ public class SignUpRequest {
         this.email = email;
     }
 
-    public String getRawPassword() {
-        return rawPassword;
+    public LocalDate getBirthdate() {
+        return birthDate;
     }
 
-    public void setRawPassword(String rawPassword) {
-        this.rawPassword = rawPassword;
+    public void setBirthdate(LocalDate birthDate) {
+        this.birthDate = birthDate;
     }
 
     public Long getGenreId() {

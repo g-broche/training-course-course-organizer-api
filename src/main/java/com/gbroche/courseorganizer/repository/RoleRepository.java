@@ -1,9 +1,9 @@
 package com.gbroche.courseorganizer.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.gbroche.courseorganizer.model.Role;
 
-public interface RoleRepository extends JpaRepository<Role, Long> {
+public interface RoleRepository extends RecordStatusRepository<Role, Long> {
     Role findByLabel(String label);
+
+    boolean existsByLabel(String label);
 }
