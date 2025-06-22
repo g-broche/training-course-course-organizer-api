@@ -29,7 +29,7 @@ import com.gbroche.courseorganizer.repository.StudentRepository;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:usertest-${random.uuid};DB_CLOSE_DELAY=-1"
+        "spring.datasource.url=jdbc:h2:mem:studenttest-${random.uuid};DB_CLOSE_DELAY=-1"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -112,13 +112,5 @@ public class StudentControllerTest extends PersonBasedTester {
                 .andExpect(status().isNoContent());
         Student softDeleted = repository.findById(toDelete.getId()).orElseThrow();
         assertEquals(RecordStatus.TO_DELETE, softDeleted.getRecordStatus());
-    }
-
-    private Student createTestStudent(String firstName, String lastName, Genre genre, LocalDate Birthdate) {
-        String email = firstName.toLowerCase() + "." + lastName.toLowerCase() + "@test.test";
-        Student testStudent = new Student(firstName, lastName, email);
-        testStudent.setBirthdate(Birthdate);
-        testStudent.setGenre(genre);
-        return testStudent;
     }
 }

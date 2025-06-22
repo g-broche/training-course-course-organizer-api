@@ -60,7 +60,7 @@ public class UserControllerTest extends PersonBasedTester {
     @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetAll_ShouldReturnAllUsers() throws Exception {
         Set<Role> roles = new HashSet<>();
-        roles.add(roleRepository.findByLabel("USER"));
+        roles.add(roleRepository.findByLabel("USER").orElseThrow());
         Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser1 = createTestUser("John", "Doe", genre, roles);
         User testUser2 = createTestUser("Mathews", "Doe", genre, roles);
@@ -77,7 +77,7 @@ public class UserControllerTest extends PersonBasedTester {
     @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testGetById_GivenValidIdShouldReturnUser() throws Exception {
         Set<Role> roles = new HashSet<>();
-        roles.add(roleRepository.findByLabel("USER"));
+        roles.add(roleRepository.findByLabel("USER").orElseThrow());
         Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser = createTestUser("John", "Doe", genre, roles);
         User existingUser = repository.save(testUser);
@@ -92,14 +92,14 @@ public class UserControllerTest extends PersonBasedTester {
     @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testChangeUserRoles_GivenValidSetOfRole_ReturnsUpdatedUser() throws Exception {
         Set<Role> roles = new HashSet<>();
-        roles.add(roleRepository.findByLabel("USER"));
+        roles.add(roleRepository.findByLabel("USER").orElseThrow());
         Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser = createTestUser("John", "Doe", genre, roles);
         User existingUser = repository.save(testUser);
 
         Set<Long> newRoles = new HashSet<>();
-        newRoles.add(roleRepository.findByLabel("ADMIN").getId());
-        newRoles.add(roleRepository.findByLabel("TEACHER").getId());
+        newRoles.add(roleRepository.findByLabel("ADMIN").orElseThrow().getId());
+        newRoles.add(roleRepository.findByLabel("TEACHER").orElseThrow().getId());
 
         mockMvc.perform(put("/api/users/" + existingUser.getId() + "/roles")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -115,7 +115,7 @@ public class UserControllerTest extends PersonBasedTester {
     @WithMockUser(username = "testuser", roles = { "ADMIN" })
     void testSoftDeleteById_GivenValidId_ChangesRecordStatus() throws Exception {
         Set<Role> roles = new HashSet<>();
-        roles.add(roleRepository.findByLabel("USER"));
+        roles.add(roleRepository.findByLabel("USER").orElseThrow());
         Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         User testUser = createTestUser("John", "Doe", genre, roles);
         User toDelete = repository.save(testUser);
@@ -124,14 +124,5 @@ public class UserControllerTest extends PersonBasedTester {
                 .andExpect(status().isNoContent());
         User softDeleted = repository.findById(toDelete.getId()).orElseThrow();
         assertEquals(RecordStatus.TO_DELETE, softDeleted.getRecordStatus());
-    }
-
-    private User createTestUser(String firstName, String lastName, Genre genre, Set<Role> roles) {
-        String email = firstName.toLowerCase() + "." + lastName.toLowerCase() + "@test.test";
-        User testUser = new User(firstName, lastName, email);
-        testUser.setPassword("testpassword");
-        testUser.setRoles(roles);
-        testUser.setGenre(genre);
-        return testUser;
     }
 }

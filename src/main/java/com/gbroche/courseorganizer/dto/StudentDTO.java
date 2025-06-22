@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import com.gbroche.courseorganizer.model.Student;
 
 public class StudentDTO {
+    private Long id;
     private String firstName;
     private String lastName;
     private String email;
@@ -12,6 +13,7 @@ public class StudentDTO {
     private LocalDate birthdate;
 
     public StudentDTO(Student student) {
+        this.id = student.getId();
         this.firstName = student.getFirstName();
         this.lastName = student.getLastName();
         this.email = student.getEmail();
@@ -19,7 +21,13 @@ public class StudentDTO {
         this.birthdate = student.getBirthdate();
     }
 
-    // getters/setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getFirstName() {
         return firstName;
