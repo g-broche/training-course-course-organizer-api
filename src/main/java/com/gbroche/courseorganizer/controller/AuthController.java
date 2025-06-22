@@ -72,7 +72,7 @@ public class AuthController {
             Genre genre = genreRepository.findById(request.getGenreId()).orElseThrow();
             newUser.setGenre(genre);
 
-            Role userRole = roleRepository.findByLabel("USER");
+            Role userRole = roleRepository.findByLabel("USER").orElseThrow();
             newUser.setRoles(Set.of(userRole));
 
             User user = userRepository.saveAndFlush(newUser);

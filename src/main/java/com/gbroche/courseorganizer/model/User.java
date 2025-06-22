@@ -36,6 +36,10 @@ public class User extends Person {
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+    @ManyToMany
+    @JoinTable(name = "user_promo", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "promo_id"))
+    private Set<Promo> promos = new HashSet<>();
+
     public User() {
         super();
     }
@@ -61,6 +65,11 @@ public class User extends Person {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public void addPromo(Promo promo) {
+        promos.add(promo);
+        promo.getUsers().add(this);
     }
 
     public boolean isVerified() {

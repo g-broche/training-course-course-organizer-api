@@ -43,7 +43,7 @@ import io.jsonwebtoken.security.Keys;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:usertest-${random.uuid};DB_CLOSE_DELAY=-1"
+        "spring.datasource.url=jdbc:h2:mem:authtest-${random.uuid};DB_CLOSE_DELAY=-1"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -123,7 +123,7 @@ public class AuthControllerTest extends PersonBasedTester {
         String hashedPassword = passwordEncoder.encode(clearPassword);
         existing.setPassword(hashedPassword);
         Set<Role> roles = new HashSet<>();
-        roles.add(roleRepository.findByLabel("USER"));
+        roles.add(roleRepository.findByLabel("USER").orElseThrow());
         existing.setRoles(roles);
         Genre genre = genreRepository.findByLabel("Male").orElseThrow();
         existing.setGenre(genre);
