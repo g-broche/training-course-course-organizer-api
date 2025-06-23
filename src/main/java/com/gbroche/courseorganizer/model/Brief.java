@@ -18,10 +18,25 @@ public class Brief extends RecordStatusEntity {
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime editedAt;
-    @Column(nullable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id")
     private Status status;
-    @Column(nullable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id")
     private User author;
+
+
+
+    public Brief(){
+
+    }
+
+    public Brief(String name, String content, Status status, User author){
+        this.name = name;
+        this.content = content;
+        this.status = status;
+        this.author = author;
+    }
 
     @PrePersist
     protected void onCreate() {
