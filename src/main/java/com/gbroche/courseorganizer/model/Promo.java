@@ -117,29 +117,53 @@ public class Promo extends RecordStatusEntity {
     }
 
     public void addStudent(Student student) {
-        this.students.add(student);
-        student.getPromos().add(this); // sync both sides
+        if(!students.contains(student)){
+            this.students.add(student);
+            student.getPromos().add(this);
+        }
     }
 
     public void removeStudent(Student student) {
-        this.students.remove(student);
-        student.getPromos().remove(this);
+        if(students.contains(student)){
+            this.students.remove(student);
+            student.getPromos().remove(this);
+        }
     }
 
     public Set<User> getUsers() {
         return users;
     }
 
-    public void setUsers(Set<User> users) {
-        this.users = users;
+    public void setUsers(Set<User> newUsers) {
+        Set<User> usersToRemove = new HashSet<>(this.users);
+        for (User existingUser : usersToRemove) {
+            if (!newUsers.contains(existingUser)) {
+                this.users.remove(existingUser);
+                existingUser.getPromos().remove(this);
+            }
+        }
+
+        for (User newUser : newUsers){
+            if(!this.users.contains(newUser)){
+                this.users.add(newUser);
+                newUser.getPromos().add(this);
+            }
+        }
     }
 
     public void addUser(User user) {
-        this.users.add(user);
+        if(!users.contains(user)){
+            this.users.add(user);
+            user.getPromos().add(this);
+        }
+
     }
 
     public void removeUser(User user) {
-        this.users.remove(user);
+        if(users.contains(user)){
+            this.users.remove(user);
+            user.getPromos().remove(this);
+        }
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,8 +1,14 @@
 package com.gbroche.courseorganizer.controller;
 
+import java.time.Duration;
 import java.util.Set;
 
+import com.gbroche.courseorganizer.dto.UserDTO;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -16,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gbroche.courseorganizer.dto.AuthRequest;
-import com.gbroche.courseorganizer.dto.AuthResponse;
 import com.gbroche.courseorganizer.dto.SignUpRequest;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
@@ -58,7 +63,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest request) {
+    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest request, HttpServletResponse response) {
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
@@ -83,14 +88,26 @@ public class AuthController {
 
             UserDetails userDetails = (UserDetails) auth.getPrincipal();
             String token = jwtUtil.generateToken(userDetails);
-            return ResponseEntity.ok(new AuthResponse(user, token));
+
+            ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true)
+                    .secure(false) // true in production
+                    .path("/")
+                    .maxAge(Duration.ofHours(1))
+                    .sameSite("Lax")
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+
+            UserDTO userDTO = new UserDTO(user);
+            return ResponseEntity.ok(userDTO);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body("Registration failed");
         }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest request, HttpServletResponse response) {
         try {
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -98,11 +115,34 @@ public class AuthController {
             UserDetails userDetails = (UserDetails) auth.getPrincipal();
             String token = jwtUtil.generateToken(userDetails);
             User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
-            return ResponseEntity.ok(new AuthResponse(user, token));
+
+            ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true)
+                    .secure(false) // true in production
+                    .path("/")
+                    .maxAge(Duration.ofHours(1))
+                    .sameSite("Lax")
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+
+            UserDTO userDTO = new UserDTO(user);
+            return ResponseEntity.ok(userDTO);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Login failed");
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwt", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // only if using HTTPS
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // <-- Expire immediately
+
+        response.addCookie(cookie);
+        return ResponseEntity.ok().build();
     }
 }

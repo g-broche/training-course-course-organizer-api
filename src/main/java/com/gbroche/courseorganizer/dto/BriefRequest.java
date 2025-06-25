@@ -8,13 +8,11 @@ public class BriefRequest {
     private String name;
     private String content;
     private Long statusId;
-    private Long authorId;
 
-    public BriefRequest(String name, String content, Long statusId, Long authorId) {
+    public BriefRequest(String name, String content, Long statusId) {
         this.name = name;
         this.content = content;
         this.statusId = statusId;
-        this.authorId = authorId;
     }
 
     public String getName() {
@@ -39,13 +37,5 @@ public class BriefRequest {
 
     public void setStatusId(Long statusId) {
         this.statusId = statusId;
-    }
-
-    public Long getAuthorId() {
-        return authorId;
-    }
-
-    public void setAuthorId(Long authorId) {
-        this.authorId = authorId;
     }
 }

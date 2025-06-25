@@ -5,8 +5,10 @@ import com.gbroche.courseorganizer.dto.BriefRequest;
 import com.gbroche.courseorganizer.enums.RecordStatus;
 import com.gbroche.courseorganizer.model.*;
 import com.gbroche.courseorganizer.repository.*;
+import com.gbroche.courseorganizer.utils.JwtUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,11 +18,15 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -62,6 +68,15 @@ class BriefControllerTest extends PersonBasedTester{
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -91,9 +106,9 @@ class BriefControllerTest extends PersonBasedTester{
         roles.put("teacher", teacherRole);
         roles.put("user", userRole);
 
-        Genre genreFemale = genreRepository.save(new Genre("Female"));
-        Genre genreMale = genreRepository.save(new Genre("Male"));
-        Genre genreNonBinary = genreRepository.save(new Genre("Non binary"));
+        Genre genreFemale = genreRepository.save(new Genre("female"));
+        Genre genreMale = genreRepository.save(new Genre("male"));
+        Genre genreNonBinary = genreRepository.save(new Genre("non binary"));
 
         genres.put("female", genreFemale);
         genres.put("male", genreMale);
@@ -161,26 +176,41 @@ class BriefControllerTest extends PersonBasedTester{
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = { "ADMIN" })
-    void testCreate_GivenValidRequest_ShouldCreateAndReturnBrief() throws Exception{
-        User teacher = userRepository.findById(teachers.get(0).getId()).orElseThrow();
-        Status briefStatus = statusRepository.findById(status.get("planned").getId()).orElseThrow();
+    @Transactional
+    void testCreate_GivenValidRequest_ShouldCreateAndReturnBrief() throws Exception {
+        // Given: a real user in DB with encoded password
+        User teacher = new User("John", "Doe", "john.doe@example.com");
+        teacher.setGenre(genreRepository.findByLabel("male").orElseThrow());
+        teacher.setPassword(passwordEncoder.encode("securePass123"));
+        teacher.setRoles(Set.of(roleRepository.findByLabel("TEACHER").orElseThrow()));
+        userRepository.saveAndFlush(teacher);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(teacher.getEmail());
+
+        // Generate JWT
+        String token = jwtUtil.generateToken(userDetails);
+        Cookie jwtCookie = new Cookie("token", token);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+
+        Status briefStatus = statusRepository.findByLabel("Planned").orElseThrow();
+
         BriefRequest toAdd = new BriefRequest(
                 "test create",
                 "just a test",
-                briefStatus.getId(),
-                teacher.getId()
+                briefStatus.getId()
         );
 
         mockMvc.perform(post("/api/briefs")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(toAdd)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(toAdd))
+                        .cookie(jwtCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("test create"));
     }
 
+
     @Test
-    @WithMockUser(username = "testuser", roles = { "ADMIN" })
+    @Transactional
     void testEdit_GivenValidRequest_EditsAndReturnsBrief() throws Exception{
         User teacher = userRepository.findById(teachers.get(0).getId()).orElseThrow();
         Status briefStatus = statusRepository.findById(status.get("planned").getId()).orElseThrow();
@@ -190,16 +220,24 @@ class BriefControllerTest extends PersonBasedTester{
                 briefStatus,
                 teacher
         ));
+        teacher.setGenre(genreRepository.findByLabel("male").orElseThrow());
+        userRepository.saveAndFlush(teacher);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(teacher.getEmail());
+        // Generate JWT
+        String token = jwtUtil.generateToken(userDetails);
+        Cookie jwtCookie = new Cookie("token", token);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
         BriefRequest editRequest = new BriefRequest(
                 "test edit",
                 "just a test",
-                briefStatus.getId(),
-                teacher.getId()
+                briefStatus.getId()
         );
 
         mockMvc.perform(put("/api/briefs/"+briefToEdit.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(editRequest)))
+                        .content(objectMapper.writeValueAsString(editRequest))
+                        .cookie(jwtCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("test edit"));
     }
@@ -210,7 +248,7 @@ class BriefControllerTest extends PersonBasedTester{
         User teacher = userRepository.findById(teachers.get(0).getId()).orElseThrow();
         Status briefStatus = statusRepository.findById(status.get("planned").getId()).orElseThrow();
         Brief toDelete = repository.save(new Brief(
-                "test",
+                "test delete",
                 "delete test",
                 briefStatus,
                 teacher
