@@ -19,6 +19,9 @@ public class Student extends Person {
     @Column(name = "has_done_dwwm", nullable = false)
     private boolean hasDoneDwwm = false;
 
+    @ManyToMany(mappedBy = "students")
+    private Set<Group> groups = new HashSet<>();
+
     @ManyToMany
     @JoinTable(name = "student_promo", joinColumns = @JoinColumn(name = "student_id"), inverseJoinColumns = @JoinColumn(name = "promo_id"))
     private Set<Promo> promos = new HashSet<>();
@@ -50,12 +53,39 @@ public class Student extends Person {
         this.hasDoneDwwm = hasDoneDwwm;
     }
 
-    public void addPromo(Promo promo) {
-        promos.add(promo);
-        promo.getStudents().add(this);
-    }
-
     public Set<Promo> getPromos() {
         return promos;
+    }
+
+    public void addPromo(Promo promo){
+        if (!promos.contains(promo)) {
+            promos.add(promo);
+            promo.addStudent(this);
+        }
+    }
+
+    public void removePromo(Promo promo){
+        if (groups.contains(promo)) {
+            groups.remove(promo);
+            promo.removeStudent(this);
+        }
+    }
+
+    public Set<Group> getGroups(){
+        return groups;
+    }
+
+    public void addGroup(Group group){
+        if (!groups.contains(group)) {
+            groups.add(group);
+            group.addStudent(this);
+        }
+    }
+
+    public void removeGroup(Group group){
+        if (groups.contains(group)) {
+            groups.remove(group);
+            group.removeStudent(this);
+        }
     }
 }

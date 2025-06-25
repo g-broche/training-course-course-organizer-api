@@ -2,6 +2,7 @@ package com.gbroche.courseorganizer.utils;
 
 import java.util.Date;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 

@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class PromoControllerTest extends PersonBasedTester{
 
     @Autowired
@@ -131,7 +132,22 @@ class PromoControllerTest extends PersonBasedTester{
     }
 
     @BeforeEach
+    @Transactional
     void setUp() {
+        List<Student> existingStudents = studentRepository.findAll();
+        for (Student student : existingStudents){
+            for (Promo promo : new HashSet<>(student.getPromos())){
+                student.removePromo(promo);
+            }
+        }
+
+        List<User> existingUsers = userRepository.findAll();
+        for (User user : existingUsers){
+            for (Promo promo : new HashSet<>(user.getPromos())){
+                user.removePromo(promo);
+            }
+        }
+
         studentRepository.deleteAll();
         repository.deleteAll();
     }

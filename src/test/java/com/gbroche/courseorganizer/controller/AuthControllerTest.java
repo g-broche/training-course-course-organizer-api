@@ -28,7 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gbroche.courseorganizer.config.JwtProperties;
 import com.gbroche.courseorganizer.dto.AuthRequest;
-import com.gbroche.courseorganizer.dto.AuthResponse;
 import com.gbroche.courseorganizer.dto.SignUpRequest;
 import com.gbroche.courseorganizer.model.Genre;
 import com.gbroche.courseorganizer.model.Role;
@@ -85,35 +84,40 @@ public class AuthControllerTest extends PersonBasedTester {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(toAdd)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user.firstName").value("John"))
-                .andExpect(jsonPath("$.user.password").doesNotExist())
-                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.password").doesNotExist())
                 .andReturn();
 
-        String responseContent = result.getResponse().getContentAsString();
-        AuthResponse authResponse = objectMapper.readValue(responseContent, AuthResponse.class);
+        // Extract the "Set-Cookie" header
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertNotNull(setCookieHeader, "Set-Cookie header should be present");
 
-        String token = authResponse.getToken();
-        assertNotNull(token);
-        assertTrue(token.split("\\.").length == 3, "JWT should have 3 parts");
+        // Parse the cookie value (assuming your cookie is named "jwt")
+        String jwt = null;
+        for (String cookiePart : setCookieHeader.split(";")) {
+            if (cookiePart.trim().startsWith("jwt=")) {
+                jwt = cookiePart.trim().substring("jwt=".length());
+                break;
+            }
+        }
 
+        assertNotNull(jwt, "JWT cookie should be present");
+        assertTrue(jwt.split("\\.").length == 3, "JWT should have 3 parts");
+
+        // Validate token
         String secret = jwtProperties.getSecret();
         byte[] keyBytes = secret.getBytes();
 
-        // Parse and validate the token
         Jws<Claims> jwsClaims = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(keyBytes))
                 .build()
-                .parseClaimsJws(token);
+                .parseClaimsJws(jwt);
 
-        // Extract claims
         Claims claims = jwsClaims.getBody();
-
-        // Assert claims
-        assertEquals("john.doe@test.test", claims.getSubject(), "Subject (email) should match");
-        assertNotNull(claims.getIssuedAt(), "IssuedAt should be set");
-        assertNotNull(claims.getExpiration(), "Expiration should be set");
-        assertTrue(claims.getExpiration().after(new Date()), "Token should not be expired");
+        assertEquals("john.doe@test.test", claims.getSubject());
+        assertNotNull(claims.getIssuedAt());
+        assertNotNull(claims.getExpiration());
+        assertTrue(claims.getExpiration().after(new Date()));
     }
 
     @Test
@@ -134,34 +138,39 @@ public class AuthControllerTest extends PersonBasedTester {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(credentials)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user.firstName").value("John"))
-                .andExpect(jsonPath("$.user.password").doesNotExist())
-                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.password").doesNotExist())
                 .andReturn();
 
-        String responseContent = result.getResponse().getContentAsString();
-        AuthResponse authResponse = objectMapper.readValue(responseContent, AuthResponse.class);
+        // Extract the "Set-Cookie" header
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertNotNull(setCookieHeader, "Set-Cookie header should be present");
 
-        String token = authResponse.getToken();
-        assertNotNull(token);
-        assertTrue(token.split("\\.").length == 3, "JWT should have 3 parts");
+        // Parse the cookie value (assuming your cookie is named "jwt")
+        String jwt = null;
+        for (String cookiePart : setCookieHeader.split(";")) {
+            if (cookiePart.trim().startsWith("jwt=")) {
+                jwt = cookiePart.trim().substring("jwt=".length());
+                break;
+            }
+        }
 
+        assertNotNull(jwt, "JWT cookie should be present");
+        assertTrue(jwt.split("\\.").length == 3, "JWT should have 3 parts");
+
+        // Validate token
         String secret = jwtProperties.getSecret();
         byte[] keyBytes = secret.getBytes();
 
-        // Parse and validate the token
         Jws<Claims> jwsClaims = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(keyBytes))
                 .build()
-                .parseClaimsJws(token);
+                .parseClaimsJws(jwt);
 
-        // Extract claims
         Claims claims = jwsClaims.getBody();
-
-        // Assert claims
-        assertEquals("john.doe@test.test", claims.getSubject(), "Subject (email) should match");
-        assertNotNull(claims.getIssuedAt(), "IssuedAt should be set");
-        assertNotNull(claims.getExpiration(), "Expiration should be set");
-        assertTrue(claims.getExpiration().after(new Date()), "Token should not be expired");
+        assertEquals("john.doe@test.test", claims.getSubject());
+        assertNotNull(claims.getIssuedAt());
+        assertNotNull(claims.getExpiration());
+        assertTrue(claims.getExpiration().after(new Date()));
     }
 }

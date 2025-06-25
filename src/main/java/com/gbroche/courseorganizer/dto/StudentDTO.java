@@ -1,6 +1,8 @@
 package com.gbroche.courseorganizer.dto;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.gbroche.courseorganizer.model.Student;
 
@@ -10,7 +12,9 @@ public class StudentDTO {
     private String lastName;
     private String email;
     private String genre;
+    private Boolean hasDoneDwwm;
     private LocalDate birthdate;
+    private Set<PromoDTO> promos;
 
     public StudentDTO(Student student) {
         this.id = student.getId();
@@ -19,6 +23,8 @@ public class StudentDTO {
         this.email = student.getEmail();
         this.genre = student.getGenre().getLabel();
         this.birthdate = student.getBirthdate();
+        this.hasDoneDwwm = student.hasDoneDwwm();
+        this.promos = new HashSet<>();
     }
 
     public Long getId() {
@@ -67,5 +73,13 @@ public class StudentDTO {
 
     public void setBirthdate(LocalDate birthdate) {
         this.birthdate = birthdate;
+    }
+
+    public Boolean hasDoneDwwm() {
+        return hasDoneDwwm;
+    }
+
+    public void setHasDoneDwwm(Boolean value) {
+        this.hasDoneDwwm = value;
     }
 }

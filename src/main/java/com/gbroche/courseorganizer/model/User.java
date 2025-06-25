@@ -67,9 +67,22 @@ public class User extends Person {
         this.roles = roles;
     }
 
+    public Set<Promo> getPromos() {
+        return  promos;
+    }
+
     public void addPromo(Promo promo) {
-        promos.add(promo);
-        promo.getUsers().add(this);
+        if(!promos.contains(promo)) {
+            promos.add(promo);
+            promo.getUsers().add(this);
+        }
+    }
+
+    public void removePromo(Promo promo) {
+        if(promos.contains(promo)) {
+            promos.remove(promo);
+            promo.getUsers().remove(this);
+        }
     }
 
     public boolean isVerified() {

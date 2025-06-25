@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,13 +46,15 @@ public class BriefController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody BriefRequest briefRequest) {
+    public ResponseEntity<?> create(@RequestBody BriefRequest briefRequest, Principal principal) {
         try {
             Status briefStatus =
                     briefRequest.getStatusId() != null
                     ? statusRepository.findById(briefRequest.getStatusId()).orElseThrow()
                     : statusRepository.findByLabel("Planned").orElseThrow();
-            User author = userRepository.findById(briefRequest.getAuthorId()).orElseThrow();
+            String userEmail = principal.getName();
+            User author = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             Brief newBrief = new Brief(
                     briefRequest.getName(),
@@ -69,10 +72,14 @@ public class BriefController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> edit(@PathVariable Long id, @RequestBody BriefRequest briefRequest) {
+    public ResponseEntity<?> edit(@PathVariable Long id, @RequestBody BriefRequest briefRequest, Principal principal) {
         try {
             Brief toEdit = repository.findById(id).orElseThrow();
-            final boolean isRequestFromAuthor = Objects.equals(toEdit.getAuthor().getId(), briefRequest.getAuthorId());
+            String userEmail = principal.getName();
+            User requestMaker = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            final boolean isRequestFromAuthor = Objects.equals(toEdit.getAuthor().getId(), requestMaker.getId());
             if (!isRequestFromAuthor){
                 return ResponseEntity.status(403).body("User who attempted to modify is not the author");
             }
